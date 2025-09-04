@@ -78,7 +78,7 @@ async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
                 f"3. After you update the code, this will be the shareable link:\n"
                 f"https://t.me/{bot_username}?start=YOUR_UNIQUE_CODE"
             )
-            # We have removed the parse_mode from this line
+            # THE FIX IS HERE: We have removed the parse_mode from this line
             await update.message.reply_text(reply_text)
     else:
         # If a non-admin sends media, the bot will do nothing.
