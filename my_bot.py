@@ -3,7 +3,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 
 # --- THIS IS THE LINE YOU MUST EDIT ---
 # Replace the text inside the quotes with your actual bot token.
-TOKEN = "8256085395:AAFvNDTmNHa0LsvkUdCOxsg-pnt7jkVVyuE" 
+token removed
 # -------------------------------------
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
