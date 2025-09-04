@@ -9,6 +9,7 @@ TOKEN = os.environ.get('TOKEN')
 
 # Replace 123456789 with your actual Telegram User ID.
 ADMIN_USER_ID = 789094994
+ADMIN_USER_ID = 6515017255
 
 # Your simple "database" for videos.
 # Add new entries here. The key is the link code, the value is the file_id.
