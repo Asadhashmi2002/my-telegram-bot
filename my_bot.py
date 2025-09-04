@@ -78,7 +78,7 @@ async def handle_media_and_create_link(update: Update, context: ContextTypes.DEF
                  await update.message.reply_text("Error: Received an empty response from the ad service. Check your API key.")
                  return
 
-            await update.message.reply_text(f"✅ Monetized link created!\n\nYour shareable link is:\n{shortened_link}")
+            await update.message.reply_text(f"Click to reveal the full video! 🤫\n\nHere is:\n{shortened_link}")
 
         except Exception as e:
             await update.message.reply_text(f"An error occurred while creating the ad link: {e}")
