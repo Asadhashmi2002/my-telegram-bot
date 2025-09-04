@@ -48,23 +48,37 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Handles photo/video messages. If sent by the admin, it replies with the file_id.
+    Handles photo/video messages. If sent by the admin, it replies with the
+    file_id and instructions to create the deep link.
     """
     # Check if the message is from the admin
     if update.message.from_user.id == ADMIN_USER_ID:
         file_id = None
         media_type = ""
-        
+        database_name = ""
+
         if update.message.video:
             file_id = update.message.video.file_id
             media_type = "Video"
+            database_name = "VIDEO_DATABASE"
         elif update.message.photo:
-            # Photos have multiple sizes, we take the largest one
             file_id = update.message.photo[-1].file_id
             media_type = "Photo"
-        
+            database_name = "PHOTO_DATABASE"
+
         if file_id:
-            await update.message.reply_text(f"{media_type} File ID:\n`{file_id}`")
+            bot_username = (await context.bot.get_me()).username
+            
+            # This is the helpful new message
+            reply_text = (
+                f"✅ **{media_type} Received!**\n\n"
+                f"**1. File ID:**\n`{file_id}`\n\n"
+                f"**2. To create a link, pick a unique code (e.g., 'new_video_2025') and add this line to your `{database_name}` dictionary in the code:**\n"
+                f"```python\n\"YOUR_UNIQUE_CODE\": \"{file_id}\",\n```\n\n"
+                f"**3. After you update the code, this will be the shareable link:**\n"
+                f"👉 `https://t.me/{bot_username}?start=YOUR_UNIQUE_CODE`"
+            )
+            await update.message.reply_text(reply_text, parse_mode='MarkdownV2')
     else:
         # If a non-admin sends media, the bot will do nothing.
         print(f"Ignoring media from non-admin user: {update.message.from_user.id}")
