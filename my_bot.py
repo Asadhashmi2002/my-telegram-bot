@@ -10,7 +10,7 @@ TOKEN = os.environ.get('TOKEN')
 REDIS_URL = os.environ.get('REDIS_URL')
 
 # Replace 123456789 with your actual Telegram User ID.
-ADMIN_USER_ID = 789094994
+ADMIN_IDS = [789094994,6515017255]
 
 
 
