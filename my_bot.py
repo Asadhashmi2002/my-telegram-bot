@@ -22,7 +22,7 @@ db = redis.from_url(REDIS_URL, decode_responses=True)
 # --- SECTION 2: BOT FUNCTIONS ---
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # This function remains the same
+    """Handles deep links by looking up the code in the Redis database."""
     if context.args:
         payload = context.args[0]
         file_id = db.get(payload)
@@ -47,7 +47,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 async def handle_media_and_create_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """
-    Generates a Telegram deep link, then shortens it with the ad service.
+    Generates a Telegram deep link, then shortens it with the InShortUrl service.
     """
     if update.message.from_user.id not in ADMIN_IDS:
         return
@@ -65,17 +65,17 @@ async def handle_media_and_create_link(update: Update, context: ContextTypes.DEF
         bot_username = (await context.bot.get_me()).username
         telegram_deep_link = f"https://t.me/{bot_username}?start={link_code}"
 
-        # --- NEW: Call the ad link API ---
+        # --- NEW: Call the InShortUrl API with format=text ---
         try:
-            # IMPORTANT: Check your ad service's API documentation for the correct URL format.
-            # This is a common format, but yours might be different.
-            api_url = f"https://inshorturl.com/api?api={ADLINK_API_KEY}&url={telegram_deep_link}"
+            # This is the corrected API URL format from your documentation
+            api_url = f"https://inshorturl.com/api?api={ADLINK_API_KEY}&url={telegram_deep_link}&format=text"
             
             response = requests.get(api_url)
-            shortened_link = response.text
+            shortened_link = response.text.strip() # .strip() removes any accidental whitespace
 
-            if "error" in shortened_link.lower():
-                 await update.message.reply_text(f"Error from ad service: {shortened_link}")
+            # Check for empty response, which indicates an error with format=text
+            if not shortened_link:
+                 await update.message.reply_text("Error: Received an empty response from the ad service. Check your API key.")
                  return
 
             await update.message.reply_text(f"✅ Monetized link created!\n\nYour shareable link is:\n{shortened_link}")
@@ -83,9 +83,8 @@ async def handle_media_and_create_link(update: Update, context: ContextTypes.DEF
         except Exception as e:
             await update.message.reply_text(f"An error occurred while creating the ad link: {e}")
 
-
 def main() -> None:
-    # This function remains the same
+    """Sets up and runs the bot."""
     application = Application.builder().token(TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     application.add_handler(MessageHandler(filters.PHOTO | filters.VIDEO, handle_media_and_create_link))
