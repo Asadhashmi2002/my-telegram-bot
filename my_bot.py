@@ -1,105 +1,97 @@
 import os
+import redis
 from telegram import Update
-from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, CommandHandler, ContextTypes
 
-# --- SECTION 1: CONFIGURATION (EDIT THESE) ---
+# --- SECTION 1: CONFIGURATION ---
 
-# This gets the token from your hosting environment's secrets. DO NOT WRITE YOUR TOKEN HERE.
+# Gets the token and Redis URL from Railway's environment variables
 TOKEN = os.environ.get('TOKEN')
+REDIS_URL = os.environ.get('REDIS_URL')
 
 # Replace 123456789 with your actual Telegram User ID.
 ADMIN_USER_ID = 789094994
 ADMIN_USER_ID = 6515017255
 
-# Your simple "database" for videos.
-# Add new entries here. The key is the link code, the value is the file_id.
-VIDEO_DATABASE = {
-    "bunny_video": "AgACAgUAAx0Efz3f2gACAulnB1b-q5lUaG_32J-M9l9zZ8hYAAIosDEb-zrwV32pCq8f8tZRAQADAgADeAADMAQ",
-    # Example: "my_cool_video": "REPLACE_WITH_VIDEO_FILE_ID",
-}
 
-# Your simple "database" for photos.
-PHOTO_DATABASE = {
-    "sample_photo": "AgACAgUAAx0Efz3f2gACAupnB1dAq_P5h85zGUeYk8hX5xqKAAIpsDEb-zrwV7r9bW9pD1uWAQADAgADeAADMAQ",
-    # Example: "my_cool_photo": "REPLACE_WITH_PHOTO_FILE_ID",
-}
+# Connect to your Redis database
+db = redis.from_url(REDIS_URL, decode_responses=True)
 
 # --- SECTION 2: BOT FUNCTIONS ---
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handles the /start command and deep links for photos and videos."""
+    """Handles deep links by looking up the code in the Redis database."""
     if context.args:
         payload = context.args[0]
         
-        # Check if the payload is in the VIDEO_DATABASE
-        if payload in VIDEO_DATABASE:
-            file_id = VIDEO_DATABASE[payload]
-            await update.message.reply_video(video=file_id, caption="Here's your video!")
-            
-        # Check if the payload is in the PHOTO_DATABASE
-        elif payload in PHOTO_DATABASE:
-            file_id = PHOTO_DATABASE[payload]
-            await update.message.reply_photo(photo=file_id, caption="Here's your photo!")
-            
+        # Check if the payload code exists in our Redis database
+        file_id = db.get(payload) # Fetches the file_id associated with the payload
+        
+        if file_id:
+            # Note: We don't know if it's a photo or video, so we try video first.
+            # A more advanced bot could store the media type as well.
+            try:
+                await update.message.reply_video(video=file_id, caption="Here is your media!")
+            except Exception:
+                try:
+                    await update.message.reply_photo(photo=file_id, caption="Here is your media!")
+                except Exception as e:
+                    print(e)
+                    await update.message.reply_text("Could not send the media.")
         else:
             await update.message.reply_text("Sorry, I don't recognize that link code.")
     else:
-        # Default message if someone just types /start
-        await update.message.reply_text("Hello! I am your bot. Use a special link to get media.")
+        await update.message.reply_text("Hello! I am your bot.")
 
-async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """
-    Handles photo/video messages. If sent by the admin, it replies with the
-    file_id and instructions to create the deep link.
-    """
-    # Check if the message is from the admin
-    if update.message.from_user.id == ADMIN_USER_ID:
+async def add_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Saves a file_id to the database with a custom link code. Admin only."""
+    # Check if the user is the admin
+    if update.message.from_user.id != ADMIN_USER_ID:
+        return # Ignore non-admins
+
+    try:
+        # Check if this command is a reply to a message with media
+        replied_message = update.message.reply_to_message
+        if not replied_message:
+            await update.message.reply_text("Please reply to a photo or video to use this command.")
+            return
+
         file_id = None
-        media_type = ""
-        database_name = ""
+        if replied_message.photo:
+            file_id = replied_message.photo[-1].file_id
+        elif replied_message.video:
+            file_id = replied_message.video.file_id
+        else:
+            await update.message.reply_text("You can only use this command when replying to a photo or video.")
+            return
 
-        if update.message.video:
-            file_id = update.message.video.file_id
-            media_type = "Video"
-            database_name = "VIDEO_DATABASE"
-        elif update.message.photo:
-            file_id = update.message.photo[-1].file_id
-            media_type = "Photo"
-            database_name = "PHOTO_DATABASE"
+        # Get the unique link code from the command, e.g., /add my_cool_video
+        link_code = context.args[0]
 
-        if file_id:
-            bot_username = (await context.bot.get_me()).username
-            
-            # This is the helpful new message (without Markdown)
-            reply_text = (
-                f"{media_type} Received!\n\n"
-                f"1. File ID:\n{file_id}\n\n"
-                f"2. To create a link, pick a unique code and add this to your {database_name} dictionary:\n"
-                f"\"YOUR_UNIQUE_CODE\": \"{file_id}\",\n\n"
-                f"3. After you update the code, this will be the shareable link:\n"
-                f"https://t.me/{bot_username}?start=YOUR_UNIQUE_CODE"
-            )
-            # THE FIX IS HERE: We have removed the parse_mode from this line
-            await update.message.reply_text(reply_text)
-    else:
-        # If a non-admin sends media, the bot will do nothing.
-        print(f"Ignoring media from non-admin user: {update.message.from_user.id}")
-        return
+        # Save the new entry to the Redis database
+        db.set(link_code, file_id)
+
+        bot_username = (await context.bot.get_me()).username
+        final_link = f"https://t.me/{bot_username}?start={link_code}"
+
+        await update.message.reply_text(f"✅ Link created!\n\nYour shareable link is:\n{final_link}")
+
+    except (IndexError, TypeError):
+        await update.message.reply_text("Usage: Reply to a photo/video and use the command `/add <unique_link_code>`")
+    except Exception as e:
+        await update.message.reply_text(f"An error occurred: {e}")
 
 def main() -> None:
     """Sets up and runs the bot."""
-    print("Starting bot...")
     application = Application.builder().token(TOKEN).build()
 
-    # Register command handlers
+    # Register handlers
     application.add_handler(CommandHandler("start", start))
-    
-    # Register a single handler for both photos and videos
-    application.add_handler(MessageHandler(filters.VIDEO | filters.PHOTO, handle_media))
+    application.add_handler(CommandHandler("add", add_media))
 
     # Start the Bot
+    print("Bot is running...")
     application.run_polling()
-    print("Bot has stopped.")
 
 if __name__ == '__main__':
     main()
