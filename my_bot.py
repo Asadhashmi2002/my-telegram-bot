@@ -31,10 +31,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             # Note: We don't know if it's a photo or video, so we try video first.
             # A more advanced bot could store the media type as well.
             try:
-                await update.message.reply_video(video=file_id, caption="Here is your media!")
+                await update.message.reply_video(video=file_id, caption="Here is your media!",protect_content=True)
             except Exception:
                 try:
-                    await update.message.reply_photo(photo=file_id, caption="Here is your media!")
+                    await update.message.reply_photo(photo=file_id, caption="Here is your media!",protect_content=True)
                 except Exception as e:
                     print(e)
                     await update.message.reply_text("Could not send the media.")
