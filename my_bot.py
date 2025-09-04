@@ -46,7 +46,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def add_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Saves a file_id to the database with a custom link code. Admin only."""
     # Check if the user is the admin
-    if update.message.from_user.id != ADMIN_USER_ID:
+    if update.message.from_user.id != ADMIN_IDS:
         return # Ignore non-admins
 
     try:
