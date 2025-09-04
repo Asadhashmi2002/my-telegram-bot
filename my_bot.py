@@ -11,7 +11,7 @@ REDIS_URL = os.environ.get('REDIS_URL')
 
 # Replace 123456789 with your actual Telegram User ID.
 ADMIN_USER_ID = 789094994
-ADMIN_USER_ID = 6515017255
+
 
 
 # Connect to your Redis database
