@@ -69,16 +69,17 @@ async def handle_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         if file_id:
             bot_username = (await context.bot.get_me()).username
             
-            # This is the helpful new message
+            # This is the helpful new message (without Markdown)
             reply_text = (
-                f"✅ **{media_type} Received!**\n\n"
-                f"**1. File ID:**\n`{file_id}`\n\n"
-                f"**2. To create a link, pick a unique code (e.g., 'new_video_2025') and add this line to your `{database_name}` dictionary in the code:**\n"
-                f"```python\n\"YOUR_UNIQUE_CODE\": \"{file_id}\",\n```\n\n"
-                f"**3. After you update the code, this will be the shareable link:**\n"
-                f"👉 `https://t.me/{bot_username}?start=YOUR_UNIQUE_CODE`"
+                f"{media_type} Received!\n\n"
+                f"1. File ID:\n{file_id}\n\n"
+                f"2. To create a link, pick a unique code and add this to your {database_name} dictionary:\n"
+                f"\"YOUR_UNIQUE_CODE\": \"{file_id}\",\n\n"
+                f"3. After you update the code, this will be the shareable link:\n"
+                f"https://t.me/{bot_username}?start=YOUR_UNIQUE_CODE"
             )
-            await update.message.reply_text(reply_text, parse_mode='MarkdownV2')
+            # We have removed the parse_mode from this line
+            await update.message.reply_text(reply_text)
     else:
         # If a non-admin sends media, the bot will do nothing.
         print(f"Ignoring media from non-admin user: {update.message.from_user.id}")
