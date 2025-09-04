@@ -14,7 +14,7 @@ REDIS_URL = os.environ.get('REDIS_URL')
 ADLINK_API_KEY = os.environ.get('ADLINK_API_KEY')
 
 # Replace 123456789 with your list of admin user IDs
-ADMIN_IDS = [789094994] # Add more IDs here, separated by commas
+ADMIN_IDS = [789094994,6515017255] # Add more IDs here, separated by commas
 
 # Connect to your Redis database
 db = redis.from_url(REDIS_URL, decode_responses=True)
