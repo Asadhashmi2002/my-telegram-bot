@@ -10,7 +10,7 @@ TOKEN = os.environ.get('TOKEN')
 REDIS_URL = os.environ.get('REDIS_URL')
 
 # Replace 123456789 with your actual Telegram User ID.
-ADMIN_IDS = [789094994,6515017255]
+ADMIN_USER_ID = [789094994,6515017255]
 
 
 
@@ -46,7 +46,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 async def add_media(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Saves a file_id to the database with a custom link code. Admin only."""
     # Check if the user is the admin
-    if update.message.from_user.id != ADMIN_IDS:
+    if update.message.from_user.id != ADMIN_USER_ID:
         return # Ignore non-admins
 
     try:
