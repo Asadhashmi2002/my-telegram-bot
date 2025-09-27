@@ -75,12 +75,25 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             keyboard = [[InlineKeyboardButton("🔄 Get Another Video", callback_data="get_video")]]
             reply_markup = InlineKeyboardMarkup(keyboard)
             try:
-                # We use query.bot.send_video instead of reply_video to avoid issues
-                await query.bot.send_video(chat_id=user.id, video=file_id, caption="Here's your random video!", protect_content=True, reply_markup=reply_markup)
+                # THE FIX IS HERE: Use context.bot instead of query.bot
+                await context.bot.send_video(
+                    chat_id=user.id, 
+                    video=file_id, 
+                    caption="Here's your random video!", 
+                    protect_content=True, 
+                    reply_markup=reply_markup
+                )
             except Exception:
-                await query.bot.send_photo(chat_id=user.id, photo=file_id, caption="Here's your random photo!", protect_content=True, reply_markup=reply_markup)
+                # AND HERE
+                await context.bot.send_photo(
+                    chat_id=user.id, 
+                    photo=file_id, 
+                    caption="Here's your random photo!", 
+                    protect_content=True, 
+                    reply_markup=reply_markup
+                )
         else:
-            # If a locked user somehow clicks "Get Video", send them the unlock link
+            # If a locked user clicks "Get Video", send them the unlock link
             await send_unlock_link(query.message, context, user)
 
     # If user clicks "Unlock Access"
